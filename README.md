@@ -1,123 +1,107 @@
 # Triage Queue — Priority Queue Manager
 
-Gestor de cola de prioridad para triaje hospitalario. Implementación en Python con interfaz CLI que modela pacientes, respeta niveles de urgencia (1 crítico → 2 urgente → 3 estándar) y mantiene orden FIFO dentro del mismo nivel.
+A lightweight Python command-line application that manages a hospital triage waiting queue using priority levels and FIFO ordering.
 
----
+Patients are attended according to their triage level: critical patients first, followed by urgent and standard patients. Within the same priority level, patients are served in their order of arrival.
 
-## 📋 Requisitos
+This project was developed as part of an educational assignment at **4Geeks Academy**.
 
-- **Python 3.11+** (usa `typing` con `|` para uniones de tipos)
-- Solo usa la **biblioteca estándar** (`collections.deque`, `dataclasses`, `datetime`). Sin paquetes externos.
+## Features
 
----
+- **Patient registration:** Add patients with a name, triage level, and arrival timestamp.
+- **Priority-based scheduling:** Critical (1), urgent (2), and standard (3) patients are handled in the correct order.
+- **FIFO ordering:** Patients with the same triage level are served in arrival order.
+- **Next patient lookup:** Inspect the next patient without removing them from the queue.
+- **Queue management:** Display all waiting patients in their expected service order.
+- **Queue statistics:** Count waiting patients by triage level.
+- **Input validation:** Reject invalid triage levels and handle empty patient names.
+- **Interactive CLI:** Operate the queue through a terminal menu.
 
-## 🚀 Uso
+## How It Works
+
+The application uses three independent `collections.deque` instances, one for each triage level.
+
+```python
+self._queues = {
+    1: deque(),  # Critical
+    2: deque(),  # Urgent
+    3: deque(),  # Standard
+}
+```
+
+This structure provides:
+
+| Operation | Time complexity |
+|---|---:|
+| Enqueue | O(1) |
+| Dequeue | O(1) |
+| Peek | O(1) |
+| List queue | O(n) |
+| Statistics | O(1) |
+
+Priority is maintained by checking the queues in order (1 → 2 → 3). FIFO ordering is preserved naturally within each individual queue.
+
+## Requirements
+
+- Python 3.11 or newer.
+- No external Python dependencies.
+
+The application uses Python standard-library modules, including `collections.deque`, `dataclasses`, `datetime`, and `sys`.
+
+## Getting Started
+
+Run the application from the project directory:
 
 ```bash
 python3 triage_queue.py
 ```
 
-Se abre un menú interactivo en la terminal:
-
-```
-============================================
-   HOSPITAL TRIAGE QUEUE SYSTEM
-============================================
-  1. Add a new patient
-  2. Call next patient
-  3. View current queue
-  4. View queue statistics
-  5. Exit
-============================================
-Select an option [1-5]:
-```
-
-### Opciones
-
-| Opción | Descripción |
-|---|---|
-| **1** | Añadir paciente: solicita nombre y nivel de triaje (1=crítico, 2=urgente, 3=estándar). |
-| **2** | Llamar al siguiente paciente: desencola y muestra quién debe ser atendido. |
-| **3** | Ver cola actual: muestra todos los pacientes en espera en orden de atención. |
-| **4** | Ver estadísticas: cuenta de pacientes por nivel de triaje. |
-| **5** | Salir del programa. |
-
----
-
-## 📁 Archivos del proyecto
-
-| Archivo | Propósito |
-|---|---|
-| `triage_queue.py` | Punto de entrada. Contiene `Patient` (dataclass), `TriageQueue` (cola de prioridad) y el bucle CLI. |
-| `DESIGN.md` | Documento de diseño: justificación de la estructura de datos y análisis de concurrencia. |
-| `README.md` | Este archivo. |
-
----
-
-## 🧠 Diseño
-
-La cola interna usa **tres `collections.deque` separados**, uno por nivel de triaje:
-
-```python
-self._queues = {
-    1: deque(),   # Crítico
-    2: deque(),   # Urgente
-    3: deque(),   # Estándar
-}
-```
-
-- `enqueue()` → O(1) — añade al deque del nivel correspondiente.
-- `dequeue()` → O(1) — recorre niveles 1→2→3 y extrae del primero no vacío.
-- `peek()` → O(1) — inspecciona el frente sin extraer.
-- `list_queue()` → O(n) — concatena los tres deques en orden.
-- `stats()` → O(1) — tres llamadas a `len()`.
-
-Consulta [`DESIGN.md`](./DESIGN.md) para una comparación detallada con alternativas (heapq, deque ordenado, listas) y el análisis de condiciones de carrera en escenarios concurrentes.
-
----
-
-## ✅ Pruebas
-
-Ejecuta todas las verificaciones con:
+On Windows, you can also use:
 
 ```bash
-python3 -c "
-from triage_queue import Patient, TriageQueue
-from datetime import datetime
-import time
-
-# Test de orden de prioridad
-q = TriageQueue()
-for p in [Patient('Std',3,datetime.now()), Patient('Urg',2,datetime.now()), Patient('Crit',1,datetime.now())]:
-    q.enqueue(p)
-assert q.dequeue().name == 'Crit'
-assert q.dequeue().name == 'Urg'
-assert q.dequeue().name == 'Std'
-print('✓ Prioridad 1 > 2 > 3')
-
-# Test FIFO mismo nivel
-q2 = TriageQueue()
-a, b, c = Patient('A',2,datetime.now()), Patient('B',2,datetime.now()), Patient('C',2,datetime.now())
-q2.enqueue(a); q2.enqueue(b); q2.enqueue(c)
-assert q2.dequeue() is a and q2.dequeue() is b and q2.dequeue() is c
-print('✓ FIFO mismo nivel')
-
-# Test cola vacía
-q3 = TriageQueue()
-assert q3.peek() is None
-try:
-    q3.dequeue()
-    assert False
-except IndexError:
-    print('✓ Empty queue handling')
-
-print()
-print('Todos los tests pasaron.')
-"
+python triage_queue.py
 ```
+
+## Available Operations
+
+The interactive menu provides five options:
+
+1. Add a new patient.
+2. Call the next patient.
+3. View the current queue.
+4. View queue statistics.
+5. Exit the application.
+
+## Project Structure
+
+```text
+triage-queue/
+├── triage_queue.py   # Patient model, priority queue, and CLI
+├── DESIGN.md         # Data structure decisions and concurrency analysis
+└── README.md         # Project documentation
+```
+
+## Design Considerations
+
+The `DESIGN.md` document explains the choice of three separate deques and compares this approach with:
+
+- A single ordered deque.
+- A priority queue implemented with `heapq`.
+- Three standard Python lists.
+
+It also discusses concurrency risks and the use of `threading.Lock` as a possible synchronization strategy for a future multi-worker implementation.
+
+**Concurrency protection is not implemented in the current application.** The program currently runs as a single-threaded command-line application.
+
+## Scope and Limitations
+
+This is an educational simulation of a priority-based waiting queue, not a production hospital information system.
+
+- Patient data is held in memory and is not persisted.
+- There is no graphical interface or database integration.
+- There is no multi-user or concurrent processing support.
+- Triage levels are simplified for the exercise and do not implement a complete clinical assessment protocol.
 
 ---
 
-## 📄 Licencia
-
-Proyecto educativo de [4Geeks Academy](https://4geeksacademy.com/).
+**Developer Wendy Sanchez**
